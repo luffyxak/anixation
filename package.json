@@ -1,0 +1,14 @@
+{
+  "name": "anixation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pure-code, beat-locked motion-graphics character trailer (Canvas2D + GLSL).",
+  "type": "module",
+  "scripts": {
+    "export": "node tools/export.mjs 60 trailer.mp4",
+    "export:30": "node tools/export.mjs 30 trailer.mp4"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^23.0.0"
+  }
+}

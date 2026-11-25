@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="data:," />
+<title>AK — Character Reveal Trailer</title>
+<style>
+  :root { --bg:#05070B; --ice:#7EE8FA; --cobalt:#0047FF; --white:#F5F8FC; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { width:100%; height:100%; background:var(--bg); color:var(--white); overflow:hidden;
+    font-family:"SF Mono",Menlo,Consolas,monospace; display:flex; align-items:center; justify-content:center; user-select:none; }
+  #stage { position:relative; width:min(100vw, calc(100vh*16/9)); height:min(100vh, calc(100vw*9/16)); background:#000; overflow:hidden; }
+  #gl, #c2d { position:absolute; inset:0; width:100%; height:100%; display:block; cursor:pointer; }
+  #c2d { visibility:hidden; }
+  #splash { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(5,7,11,.72);
+    backdrop-filter:blur(4px); cursor:pointer; z-index:5; transition:opacity .25s; }
+  #splash.hidden { opacity:0; pointer-events:none; }
+  .card { border:1px solid rgba(126,232,250,.4); padding:26px 40px; text-align:center; background:rgba(5,7,11,.8); }
+  .card h1 { font:900 64px/1 "Arial Black",Helvetica,sans-serif; letter-spacing:-2px; }
+  .card h1 span { color:var(--ice); }
+  .card p { margin-top:12px; font-size:13px; letter-spacing:3px; color:#9fb2c8; }
+  #hud { position:absolute; left:0; right:0; bottom:0; padding:10px 14px; display:flex; gap:12px; align-items:center;
+    background:linear-gradient(transparent, rgba(0,0,0,.65)); z-index:4; transition:opacity .3s; font-size:12px; }
+  #hud.idle { opacity:0; }
+  #scrub { flex:1; accent-color:var(--ice); }
+  #time { min-width:150px; text-align:right; color:#cfe; }
+  body[data-capture="1"] #hud, body[data-capture="1"] #splash { display:none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="gl" width="1920" height="1080"></canvas>
+  <canvas id="c2d" width="1920" height="1080"></canvas>
+  <div id="splash"><div class="card"><h1>A<span>K</span></h1><p>CLICK / SPACE TO PLAY · R REPLAY · M MUTE · ←/→ STEP</p></div></div>
+  <div id="hud"><span id="cut">CUT 01</span><input id="scrub" type="range" min="0" max="17.162" step="0.001" value="0" /><span id="time">0.000s</span></div>
+</div>
+<audio id="song" src="ReelAudio-30300.mp3" preload="auto"></audio>
+<script src="src/beatmap.js"></script>
+<script src="src/core.js"></script>
+<script src="src/fx.js"></script>
+<script src="src/ao.js"></script>
+<script src="src/gfx.js"></script>
+<script src="src/cuts.js"></script>
+<script src="src/custom.js"></script>
+<script>
+(function () {
+  const AO = window.AO;
+  const c2d = document.getElementById('c2d');
+  const ctx = c2d.getContext('2d');
+  const fx = AO.createFX(document.getElementById('gl'), c2d);
+  const song = document.getElementById('song');
+  const splash = document.getElementById('splash');
+  const hud = document.getElementById('hud');
+  const scrub = document.getElementById('scrub');
+  const timeEl = document.getElementById('time');
+  const cutEl = document.getElementById('cut');
+  scrub.max = AO.DURATION;
+
+  // Master clock = song playback position, smoothed with performance.now() so
+  // coarse audio.currentTime updates never cause visual stutter or drift.
+  let playing = false, anchorPerf = 0, anchorT = 0, current = 0;
+  function clockNow() {
+    if (!playing) return current;
+    const est = anchorT + (performance.now() - anchorPerf) / 1000;
+    if (!song.paused && song.readyState >= 2) {
+      const drift = song.currentTime - est;
+      if (Math.abs(drift) > 0.045) { anchorT = song.currentTime; anchorPerf = performance.now(); return song.currentTime; }
+      anchorT += drift * 0.08; // gentle slew toward the audio clock
+    }
+    return est;
+  }
+  function draw(t) {
+    current = Math.max(0, Math.min(AO.DURATION, t));
+    const cut = AO.renderAt(ctx, fx, current);
+    timeEl.textContent = current.toFixed(3) + 's / ' + AO.DURATION.toFixed(2);
+    cutEl.textContent = 'CUT ' + String(cut.id).padStart(2, '0') + ' ' + cut.name;
+    if (document.activeElement !== scrub) scrub.value = current;
+  }
+  function play(from) {
+    if (from !== undefined) current = from;
+    if (current >= AO.DURATION - 0.01) current = 0;
+    song.currentTime = current;
+    song.play().catch(() => {});
+    anchorT = current; anchorPerf = performance.now();
+    playing = true; splash.classList.add('hidden'); idleHud();
+  }
+  function pause() { playing = false; song.pause(); hud.classList.remove('idle'); }
+  function toggle() { playing ? pause() : play(); }
+  function seek(t) { const was = playing; pause(); draw(t); song.currentTime = current; if (was) play(); }
+  let idleTimer = 0;
+  function idleHud() { hud.classList.remove('idle'); clearTimeout(idleTimer); idleTimer = setTimeout(() => playing && hud.classList.add('idle'), 1500); }
+
+  function loop() {
+    if (playing) {
+      const t = clockNow();
+      if (t >= AO.DURATION) { draw(AO.DURATION); pause(); }
+      else draw(t);
+    }
+    requestAnimationFrame(loop);
+  }
+
+  document.getElementById('gl').addEventListener('click', toggle);
+  c2d.addEventListener('click', toggle);
+  splash.addEventListener('click', () => play());
+  scrub.addEventListener('input', () => seek(parseFloat(scrub.value)));
+  document.getElementById('stage').addEventListener('mousemove', idleHud);
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.key === 'r' || e.key === 'R') play(0);
+    else if (e.key === 'm' || e.key === 'M') song.muted = !song.muted;
+    else if (e.key === 'ArrowRight') seek(current + (e.shiftKey ? 0.25 : 1 / 60));
+    else if (e.key === 'ArrowLeft') seek(current - (e.shiftKey ? 0.25 : 1 / 60));
+  });
+
+  // Deterministic frame access for capture / verification.
+  window.__setTrailerTime = (sec) => { pause(); draw(sec); };
+  const qs = new URLSearchParams(location.search);
+  if (qs.has('capture')) document.body.dataset.capture = '1';
+  if (qs.has('t')) { document.body.dataset.capture = '1'; draw(parseFloat(qs.get('t'))); }
+  else draw(0);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

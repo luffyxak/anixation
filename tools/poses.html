@@ -1,0 +1,22 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>AO pose sheet</title>
+<style>body{margin:0;background:#dfe6f0}canvas{width:100vw;display:block}</style></head>
+<body><canvas id="c" width="1920" height="1080"></canvas>
+<script src="../src/beatmap.js"></script>
+<script src="../src/core.js"></script>
+<script src="../src/ao.js"></script>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+const names=Object.keys(AO.POSES);
+ctx.fillStyle='#F5F8FC';ctx.fillRect(0,0,1920,1080);
+names.forEach((n,i)=>{
+  const col=i%6,row=Math.floor(i/6);
+  const x=160+col*320,y=330+row*360,h=280;
+  const pose=AO.POSES[n];
+  const g=y; // ground
+  ctx.fillStyle='#0B1226';ctx.font='20px sans-serif';ctx.fillText(n,x-60,y+40);
+  AO.drawAO(ctx,pose,{x,y:g-AO.groundOffset(pose,h),h,t:0.3});
+});
+// big portrait
+AO.drawAO(ctx,AO.POSES.pockets,{x:1700,y:1000-AO.groundOffset(AO.POSES.pockets,700)+400,h:700,t:0.3});
+</script></body></html>
