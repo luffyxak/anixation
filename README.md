@@ -4,6 +4,38 @@ A 17-second, 13-cut character reveal trailer built with **Canvas2D, one GLSL pos
 
 > **Remix it.** Swap the character, write your own scenes, drop in your own song. Start with [CUSTOMIZE.md](CUSTOMIZE.md). The creative brief it started from is in [PROMPT.md](PROMPT.md).
 
+## Remix it with AI (Claude Code, ChatGPT, Gemini)
+
+You don't need to code. Give this project to an AI assistant and tell it what you want.
+
+**Step 1: give it the project.** Pick whichever fits your tool:
+
+- **Copy the link:** `https://github.com/luffyxak/anixation`, then paste it into your AI chat.
+- **Download the ZIP:** click the green **Code** button above, then **Download ZIP**. Upload the ZIP (or unzip it and upload the files) to ChatGPT, Gemini or Claude.
+- **Claude Code** (works best, since it can edit and run the files directly):
+  ```bash
+  git clone https://github.com/luffyxak/anixation.git && cd anixation && claude
+  ```
+
+**Step 2: paste a prompt like this one**, then change the part in brackets:
+
+```text
+This is a pure-code motion-graphics trailer (Canvas2D + GLSL), synced to a song's beats.
+Read README.md and CUSTOMIZE.md first. Every frame must be computed from time t
+(no per-frame accumulation, no Math.random), and hits must use AO.b(i) beat times.
+
+I want to: [change the letters to "XY" and the end-card name to "@myname" /
+make the character a red-haired girl in a black hoodie / replace cut 5 with my own
+scene / use my song my-song.mp3 and re-snap all cuts to its drop].
+
+Put scene and character changes in src/custom.js where possible.
+Give me the full updated files.
+```
+
+**Step 3: open `index.html`** to watch it. Scrub with the arrow keys, and run `npm run export` to save an MP4.
+
+Ideas to try: your own name or logo, a new character, a new colour palette, a different song, extra cuts, a vertical 9:16 version for Reels/TikTok.
+
 ## Run it
 
 No build step and no server. Just open the page:
